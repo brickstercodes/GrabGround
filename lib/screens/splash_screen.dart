@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/providers.dart'; // Ensure this import is correct
+import '../providers/auth_provider.dart'; // Ensure this import is correct
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,31 +16,32 @@ class SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthentication();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthentication();
+    });
   }
 
-  // Simulate checking the authentication and load user data
   Future<void> _checkAuthentication() async {
-    await Future.delayed(const Duration(seconds: 2)); // Simulating loading
+    // Simulate a delay to mimic loading time
+    await Future.delayed(const Duration(seconds: 2));
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _isAuthenticated = authProvider.isAuthenticated; // Get auth status
+    _isAuthenticated = authProvider.isAuthenticated;
 
     if (mounted) {
       if (_isAuthenticated) {
-        // Proceed to the next step after authentication
         _showUserTypeSelection();
       } else {
-        // If not authenticated, navigate to the login screen
         Navigator.pushReplacementNamed(context, '/login');
       }
     }
   }
 
-  // Show dropdown for user type selection
   void _showUserTypeSelection() {
     showDialog(
       context: context,
+      barrierDismissible:
+          false, // Ensure the dialog isn't dismissed accidentally
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Select User Type'),
@@ -64,7 +65,6 @@ class SplashScreenState extends State<SplashScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  // Navigate to the appropriate dashboard based on user type
                   if (_selectedUserType == 'Customer') {
                     Navigator.pushReplacementNamed(
                         context, '/customer_dashboard');

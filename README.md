@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # GrabGround
+=======
+# grabground
+>>>>>>> b72cb74 (name altered)
 
 A new Flutter project.
 

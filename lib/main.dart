@@ -10,7 +10,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load the .env file
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env").catchError((error) {
+    print('Failed to load .env file: $error');
+  });
 
   // Initialize Supabase with environment variables
   await Supabase.initialize(
