@@ -1,119 +1,65 @@
 // lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-// Fixed import path
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider with ChangeNotifier {
-  User? _user;
+  final SupabaseClient _supabase = Supabase.instance.client;
   bool _isLoading = false;
 
-  User? get user => _user;
   bool get isLoading => _isLoading;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _supabase.auth.currentUser != null;
 
-  // Login function with user type check
   Future<bool> login(String email, String password) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      // TODO: Implement actual API call
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-
-      // Simulate a user response with the user type
-      _user = User(
-        id: '1',
-        name: 'Test User',
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
-        phone: '1234567890',
-        userType:
-            'Customer', // Here you would typically get this from the API response
+        password: password,
       );
 
-      // Store auth token and user type in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', 'dummy_token');
-      await prefs.setString('user_type', _user!.userType); // Save userType
-
-      _isLoading = false;
-      notifyListeners();
-      return true;
+      if (response.user != null) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
+      print('Error during login: $e');
       return false;
     }
   }
 
-  // Register function with user type
-  Future<void> register(String email, String password, String userType) async {
+  Future<void> register(
+      String email, String password, String selectedUserType) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      // TODO: Implement actual registration API call
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-
-      // Simulate a user registration response
-      _user = User(
-        id: '1',
-        name: 'New User',
+      final response = await _supabase.auth.signUp(
         email: email,
-        phone: '1234567890',
-        userType: userType, // Save the userType from registration
+        password: password,
       );
 
-      // Store auth token and user type in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', 'dummy_token');
-      await prefs.setString('user_type', userType); // Save userType
-
-      _isLoading = false;
-      notifyListeners();
+      if (response.user != null) {
+        _isLoading = false;
+        notifyListeners();
+      }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
+      print('Error during registration: $e');
     }
   }
 
-  // Logout function
   Future<void> logout() async {
-    _user = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('user_type'); // Remove user type from prefs
+    await _supabase.auth.signOut();
     notifyListeners();
   }
-
-  // Check user type on startup
-  Future<void> loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userType = prefs.getString('user_type');
-    if (userType != null) {
-      _user = User(
-        id: '1', // Placeholder user data
-        name: 'Test User',
-        email: 'test@example.com',
-        phone: '1234567890',
-        userType: userType,
-      );
-    }
-    notifyListeners();
-  }
-}
-
-class User {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final String userType; // Add userType field
-
-  User({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.userType, // Initialize userType in the constructor
-  });
 }

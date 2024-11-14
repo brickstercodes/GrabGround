@@ -110,21 +110,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 }
                               }
                             },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                       child: auth.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator()
                           : const Text('Login'),
                     );
                   },
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/register');
-                  },
-                  child: const Text('Don\'t have an account? Register'),
                 ),
               ],
             ),
@@ -132,12 +122,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 }

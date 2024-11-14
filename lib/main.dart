@@ -1,16 +1,32 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv package
 import 'screens/screens.dart';
 import 'providers/auth_provider.dart'; // Ensure this is correct
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load the .env file
+  await dotenv.load(fileName: ".env");
+
+  // Initialize Supabase with environment variables
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL'] ??
+        '', // Use environment variable for Supabase URL
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ??
+        '', // Use environment variable for Supabase anonymous key
+  );
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         // Add other providers here if needed
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
