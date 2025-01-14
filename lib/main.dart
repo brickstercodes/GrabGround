@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv package
+import 'features/chat/screens/chat_screen.dart';
 import 'screens/billing_details_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/screens.dart';
@@ -86,6 +87,7 @@ class MyApp extends StatelessWidget {
                   ModalRoute.of(context)!.settings.arguments as BookingFlow,
             ),
         '/analytics': (context) => const AnalyticsScreen(),
+        '/chat': (context) => const ChatScreen(),
       },
     );
   }

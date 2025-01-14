@@ -9,10 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  supabase_flutter: ^2.3.2
+  supabase_flutter: ^2.8.3
   supabase_auth_ui: ^0.5.4
   flutter_web_auth_2: ^2.1.4
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^5.0.2
   cupertino_icons: ^1.0.2
   provider: ^6.0.5
   shared_preferences: ^2.2.2
@@ -28,12 +28,18 @@ dependencies:
   shimmer: ^3.0.0
   fl_chart: ^0.65.0
   permission_handler: ^11.3.0
+  google_generative_ai: ^0.2.0
+  markdown: ^7.2.1
+  flutter_gemini: ^2.0.1
+  json_annotation: ^4.8.1
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  flutter_lints: ^5.0.0
+  flutter_lints: ^2.0.0
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1
 
 flutter:
   uses-material-design: true
