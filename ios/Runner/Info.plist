@@ -45,5 +45,25 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.flutterquickstart</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+	</array>
+	<key>GIDClientID</key>
+	<string>997403508390-36312f21le3tggcfgp9rc8kqg8rjooh2.apps.googleusercontent.com</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 </dict>
 </plist>

@@ -1,32 +1,51 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv package
+import 'screens/billing_details_screen.dart';
+import 'screens/help_screen.dart';
 import 'screens/screens.dart';
-import 'providers/auth_provider.dart'; // Ensure this is correct
+import 'screens/settings_screen.dart';
+import 'theme/app_theme.dart';
+import 'providers/auth_state_provider.dart';
+import 'providers/theme_provider.dart';
+import 'models/booking_flow.dart';
+import 'screens/analytics_screen.dart';
+import 'providers/user_provider.dart';
+// Add this import
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
 
-  // Load the .env file
-  await dotenv.load(fileName: ".env").catchError((error) {
-    print('Failed to load .env file: $error');
-  });
+  debugPrint('=== App Starting ===');
 
-  // Initialize Supabase with environment variables
+  await dotenv.load(fileName: ".env");
+  debugPrint('Environment loaded');
+
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'] ??
-        '', // Use environment variable for Supabase URL
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ??
-        '', // Use environment variable for Supabase anonymous key
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    debug: true,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
+    realtimeClientOptions: const RealtimeClientOptions(
+      logLevel: RealtimeLogLevel.info,
+    ),
   );
+  debugPrint('Supabase initialized');
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // Add other providers here if needed
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(prefs),
+        ),
+        ChangeNotifierProvider(create: (_) => AuthStateProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),
@@ -39,21 +58,34 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Turf Booking App',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: context.watch<ThemeProvider>().themeMode,
+      home: StreamBuilder<AuthState>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final session = snapshot.data!.session;
+            if (session != null) {
+              return const SelectTypeScreen();
+            }
+          }
+          return const AuthScreen();
+        },
       ),
-      initialRoute: '/',
       routes: {
-        '/': (context) => const SplashScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/dashboard': (context) => DashboardScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
+        '/select_type': (context) => const SelectTypeScreen(),
+        '/customer_dashboard': (context) => const CustomerDashboardScreen(),
+        '/manager_dashboard': (context) => const ManagerDashboardScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/help': (context) => const HelpScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/bookings': (context) => const BookingsScreen(),
-        '/customer_dashboard': (context) => CustomerDashboardScreen(),
-        '/manager_dashboard': (context) => ManagerDashboardScreen(),
+        '/billing': (context) => BillingDetailsScreen(
+              booking:
+                  ModalRoute.of(context)!.settings.arguments as BookingFlow,
+            ),
+        '/analytics': (context) => const AnalyticsScreen(),
       },
     );
   }
