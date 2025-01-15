@@ -12,11 +12,8 @@ Turf _$TurfFromJson(Map<String, dynamic> json) => Turf(
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
       location: json['location'] as String,
-      type: json['type'] as String,
-      embedding: (json['embedding'] as List<dynamic>?)
-          ?.map((e) => (e as num).toDouble())
-          .toList(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      amenities:
+          (json['amenities'] as List<dynamic>).map((e) => e as String).toList(),
     );
 
 Map<String, dynamic> _$TurfToJson(Turf instance) => <String, dynamic>{
@@ -25,7 +22,5 @@ Map<String, dynamic> _$TurfToJson(Turf instance) => <String, dynamic>{
       'description': instance.description,
       'price': instance.price,
       'location': instance.location,
-      'type': instance.type,
-      'embedding': instance.embedding,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'amenities': instance.amenities,
     };

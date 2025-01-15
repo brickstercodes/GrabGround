@@ -9,9 +9,7 @@ class Turf {
   final String description;
   final double price;
   final String location;
-  final String type;
-  final List<double>? embedding;
-  final DateTime createdAt;
+  final List<String> amenities;
 
   Turf({
     required this.id,
@@ -19,11 +17,21 @@ class Turf {
     required this.description,
     required this.price,
     required this.location,
-    required this.type,
-    this.embedding,
-    required this.createdAt,
+    required this.amenities,
   });
 
   factory Turf.fromJson(Map<String, dynamic> json) => _$TurfFromJson(json);
   Map<String, dynamic> toJson() => _$TurfToJson(this);
+
+  // Fallback fromJson in case something goes wrong
+  factory Turf.fallback() {
+    return Turf(
+      id: 0,
+      name: '',
+      description: '',
+      price: 0.0,
+      location: '',
+      amenities: [],
+    );
+  }
 }

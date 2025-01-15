@@ -1,53 +1,153 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
-import '../../../config/env_config.dart';
+import 'package:logger/logger.dart';
 import '../models/chat_response.dart';
 
 class WebSocketService {
-  final String _wsUrl = EnvConfig.websocketUrl; // Use environment config
-  late final WebSocketChannel _channel;
-  final String _userId;
+  final _logger = Logger();
+  static WebSocketService? _instance;
+  WebSocketChannel? _channel;
+  final String userId;
+  final _responseController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Timer? _reconnectTimer;
+  bool _isConnecting = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 5;
 
-  WebSocketService({required String userId}) : _userId = userId {
+  // Add connection status stream
+  final _connectionStatusController = StreamController<bool>.broadcast();
+  Stream<bool> get connectionStatus => _connectionStatusController.stream;
+
+  factory WebSocketService({required String userId}) {
+    _instance ??= WebSocketService._internal(userId);
+    return _instance!;
+  }
+
+  WebSocketService._internal(this.userId) {
     _connect();
   }
 
-  void _connect() {
-    _channel = WebSocketChannel.connect(Uri.parse(_wsUrl));
-  }
-
-  Stream<ChatResponse> get responses => _channel.stream.map((event) {
-        final data = jsonDecode(event as String);
-        if (data['error'] != null) {
-          throw Exception(data['error']);
+  Stream<ChatResponse> get responses => _responseController.stream.map((json) {
+        try {
+          return ChatResponse.fromJson(json);
+        } catch (e) {
+          _logger.e('Error converting response to ChatResponse: $e');
+          rethrow;
         }
-        return ChatResponse.fromJson(data);
-      }).handleError((error) {
-        print('WebSocket error: $error');
-        _reconnect();
-        throw error;
       });
 
-  void _reconnect() {
-    _channel.sink.close(status.goingAway);
-    _connect();
+  String _getWebSocketUrl() {
+    final host = Platform.isAndroid
+        ? '10.0.2.2'
+        : Platform.isIOS
+            ? 'localhost'
+            : '127.0.0.1';
+    return 'ws://$host:8000/ws/$userId';
   }
 
-  Future<void> sendMessage(String content) async {
+  Future<void> _connect() async {
+    if (_isConnecting) return;
+    _isConnecting = true;
+    _connectionStatusController.add(false);
+
     try {
-      _channel.sink.add(jsonEncode({
-        'content': content,
-        'user_id': _userId,
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      final wsUrl = _getWebSocketUrl();
+      _logger.d('Attempting to connect to WebSocket: $wsUrl');
+
+      _channel = WebSocketChannel.connect(
+        Uri.parse(wsUrl),
+      );
+
+      bool receivedFirstMessage = false;
+
+      _channel?.stream.listen(
+        (data) {
+          _logger.d('Raw WebSocket data received: $data');
+          try {
+            if (data == null) {
+              _logger.w('Received null data from WebSocket');
+              return;
+            }
+            final jsonData = jsonDecode(data.toString());
+            _logger.d('Parsed WebSocket data: $jsonData');
+            if (!receivedFirstMessage) {
+              receivedFirstMessage = true;
+              _connectionStatusController.add(true);
+              _logger.i('WebSocket connection confirmed with first message');
+            }
+
+            _retryCount = 0;
+            _responseController.add(jsonData);
+          } catch (e) {
+            _logger.e('Error parsing WebSocket data: $e');
+            _handleError('Failed to parse message: $e');
+          }
+        },
+        onError: _handleError,
+        onDone: () {
+          _logger.w('WebSocket connection closed');
+          _connectionStatusController.add(false);
+          _handleDisconnect();
+        },
+        cancelOnError: false,
+      );
+
+      // Send initial ping after connection
+      Timer(const Duration(seconds: 1), () {
+        if (!receivedFirstMessage) {
+          _handleError('No initial response received');
+        }
+      });
     } catch (e) {
-      print('Send message error: $e');
-      throw Exception('Failed to send message');
+      _logger.e('WebSocket connection error: $e');
+      _handleError(e);
+    } finally {
+      _isConnecting = false;
+    }
+  }
+
+  void _handleError(dynamic error) {
+    _logger.e('WebSocket error: $error');
+    if (!_responseController.isClosed) {
+      _responseController.addError(error);
+    }
+    _handleDisconnect();
+  }
+
+  void _handleDisconnect() {
+    if (_retryCount < _maxRetries) {
+      _retryCount++;
+      final backoff = Duration(seconds: _retryCount * 2);
+      _reconnectTimer?.cancel();
+      _reconnectTimer = Timer(backoff, _connect);
     }
   }
 
   void dispose() {
-    _channel.sink.close(status.goingAway);
+    _reconnectTimer?.cancel();
+    _channel?.sink.close();
+    _responseController.close();
+    _connectionStatusController.close();
+    _instance = null;
+  }
+
+  void sendMessage(String message) {
+    try {
+      if (_channel == null) {
+        _logger.w('WebSocket channel is null');
+        _connect();
+        return;
+      }
+      _logger.d('Sending message: $message');
+      _channel?.sink.add(jsonEncode({
+        'message': message,
+        'timestamp': DateTime.now().toIso8601String(),
+      }));
+    } catch (e) {
+      _logger.e('Error sending message: $e');
+    }
   }
 }

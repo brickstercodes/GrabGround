@@ -1,23 +1,31 @@
 import 'package:flutter/material.dart';
-import '../../auth/models/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
-  final ChatMessage message;
+  final String message; // Changed type from ChatMessage to String
+  final bool isUser;
+  final DateTime timestamp;
 
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({
+    super.key,
+    required this.message,
+    required this.isUser,
+    required this.timestamp,
+  });
+
+  // ... rest of ChatBubble implementation
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(8),
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: message.isUser
+          color: isUser
               ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
@@ -30,9 +38,9 @@ class ChatBubble extends StatelessWidget {
           ],
         ),
         child: Text(
-          message.message,
+          message,
           style: TextStyle(
-            color: message.isUser
+            color: isUser
                 ? Colors.white
                 : Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: 16,
